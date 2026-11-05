@@ -1,0 +1,44 @@
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: calculadora_db
+    environment:
+      POSTGRES_DB: calculadora
+      POSTGRES_USER: calc
+      POSTGRES_PASSWORD: calc123
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U calc -d calculadora"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: calculadora_api
+    ports:
+      - "8000:5000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_USER: calc
+      POSTGRES_PASSWORD: calc123
+      POSTGRES_DB: calculadora
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+
+volumes:
+  db_data:
+
+networks:
+  backend:
+    driver: bridge
